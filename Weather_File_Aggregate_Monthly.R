@@ -1,7 +1,8 @@
 sessionInfo() # (1) Check out "other attached packages" to see what's currently installed
 # Install necessary packages 
-install.packages(c("zoo", "xts", "tidyverse"), dependencies = TRUE) # (2)
-library(tidyverse); library(zoo); library(xts); library(lubridate) # (3) ALWAYS call up installed packages to current workspace with library()
+install.packages(c("zoo", "xts", "tidyverse","xlsx"), dependencies = TRUE) # (2)
+library(tidyverse); library(zoo); library(xts); library(lubridate);library(xlsx) # (3) ALWAYS call up installed packages to current workspace with library()
+
 
 # This was all done in RStudio
 R <- R.Version(); R$version.string; R$platform; S <- sessionInfo(); S$running # Check R version, platform, and computer # Paste these 3 (& hashtag out) to be polite
@@ -10,36 +11,59 @@ R <- R.Version(); R$version.string; R$platform; S <- sessionInfo(); S$running # 
 #[1] "macOS Catalina 10.15.6"
 
 
-# Put your files in your folder first
-
-
-#### Do one push up with one file ####
+# Past the path with file name of your weather file
+FONRmet <- read.csv("/Users/conorrickard/Documents/R_prog_files/_Git_Projects/ForLoop_Aggregate_MonthlyTotalsFONR/IMPORT/FONR_Weather_07182019_06192020.csv")
+# Rename the headers
+names(FONRmet)[1:2] <- c("DateTime", "millimeters")
 ## Two steps #POSXIlt to POSIXct
-# Note that strptime converts to POSIXlt format and requires a step to convert from local time (lt) to calendar time (ct)
-ldf_20$FONR_1$DateTime = strptime(ldf_20$FONR_1$DateTime, format = "%m/%d/%y %H:%M:%S") ; str(ldf_20$FONR_1$DateTime)
+FONRmet$DateTime = strptime(FONRmet$DateTime, format = "%m/%d/%y %H:%M:%S") ; str(FONRmet$DateTime)
 # Convert time to POSIXct
-ldf_20$FONR_1$DateTime  <- as.POSIXct(ldf_20$FONR_1$DateTime, format = "%m/%d/%y %H:%M:%S") ; str(ldf_20$FONR_1$DateTime)
+FONRmet$DateTime  <- as.POSIXct(FONRmet$DateTime, format = "%m/%d/%y %H:%M:%S") ; str(FONRmet$DateTime)
+# How many NA are in the raw data
+table(is.na(FONRmet$DateTime)) 
+# Pull out a dataframe
+df.FONRmet <- data.frame(FONRmet[1:2]); str(df.FONRmet); class(df.FONRmet$DateTime)
+# Aggregate fog data as monthly and as sum of observed events
+FONRmet.monthly <- aggregate(df.FONRmet$millimeters, list(DateTime=cut(df.FONRmet$DateTime, "1 month")), sum) ; str(FONRmet.monthly); head(FONRmet.monthly)
+class(df.FONRmet$DateTime)
+# FONRmet.monthly$DateTime <- strptime(FONRmet.monthly$DateTime, format = "%m/%d/%y %H:%M:%S") ; str(FONRmet.monthly); class(FONRmet.monthly$DateTime)
+# FONRmet.monthly$DateTime <- as.POSIXct(FONRmet.monthly$DateTime, format = "%Y-%m-%d %H:%M:%S"); str(FONRmet.monthly); head(FONRmet.monthly) #aggregate() and cut() coerce coerce time to a factor
+names(FONRmet.monthly) <- c("DateTime", "millimeters"); str(FONRmet.monthly); head(FONRmet.monthly) # Aggregating also fouled up the names
+# FONRmet.monthly$DateTime <- align.time(FONRmet.monthly$DateTime, n=60*30); str(FONRmet.monthly$DateTime); head(FONRmet.monthly)  #align.time is a function in library(xts)
 
-table(is.na(ldf_20$FONR_1$DateTime)) #Make sure their are no NA in raw data
+write.csv(FONRmet.monthly,"/Users/conorrickard/Documents/R_prog_files/_Git_Projects/ForLoop_Aggregate_MonthlyTotalsFONR/FONRmetExport/FONRMetMonthly", row.names = FALSE)
 
-# Pull out a dataframe of just FONR_1 first two columns
-df.FONR_1 <- data.frame(ldf_20$FONR_1[1:2]); str(df.FONR_1); class(df.FONR_1$DateTime)
 
-# Aggregate fog data as monthly as sum of observed events
-FONR_1.monthly <- aggregate(df.FONR_1$Liters, list(DateTime=cut(df.FONR_1$DateTime, "1 month")), sum) ; str(FONR_1.monthly); head(FONR_1.monthly)
-FONR_1.monthly$DateTime <- strptime(FONR_1.monthly$DateTime, format = "%m/%d/%y %H:%M:%S") ; str(FONR_1.monthly); class(FONR_1.monthly$DateTime)
-FONR_1.monthly$DateTime <- as.POSIXct(FONR_1.monthly$DateTime, format = "%Y-%m-%d %H:%M:%S"); str(FONR_1.monthly); head(FONR_1.monthly) #aggregate() and cut() coerce to time a factor
-names(FONR_1.monthly) <- c("DateTime", "Liters"); str(FONR_1.monthly); head(FONR_1.monthly) # Aggregating also fouled up the names
-# FONR_1.monthly$DateTime <- align.time(FONR_1.monthly$DateTime, n=60*30); str(FONR_1.monthly$DateTime); head(FONR_1.monthly)  #align.time is a function in library(xts)
+
+### ???????????????????
+# Can't run below without codes yet...  Plus the above output isn't a csv, it's a text file
+
 
 # Create a new dataframe containing the span of dates for the dataset in monthly interval. 
-date_span.FONR_1.monthly <- data.frame(DateTime = seq(as.POSIXct(floor_date(min(FONR_1.monthly$DateTime),unit = "1 month")), 
-                                                      as.POSIXct(ceiling_date(max(FONR_1.monthly$DateTime),unit= "1 month")), 
-                                                      by = "1 month")) ; str(date_span.FONR_1.monthly)
-
+date_span.FONRmet.monthly <- data.frame(seq(min(as.POSIXct(FONRmet.monthly$DateTime)), 
+                                                      max(as.POSIXct(FONRmet.monthly$DateTime)), 
+                                                      by = "1 month")) 
+class(df.FONRmet$DateTime)
 # Merge the span of dates at hourly interval with the event data. 
-merged.FONR_1.monthly = merge(date_span.FONR_1.hlfhrly, FONR_1.hlfhrly, by = "DateTime", all.x = TRUE) ; str(merged.FONR_1.hlfhrly)
+merged.FONRmet.monthly = merge(date_span.FONRmet.monthly, FONRmet.monthly, by = "DateTime", all.x = TRUE) ; str(merged.FONRmet.hlfhrly)
 
-#Replace NA's in Liters with 0 values to represent no events recorded that hour.  
-merged.FONR_1.hlfhrly$Liters[is.na(merged.FONR_1.hlfhrly$Liters)] <- 0; str(merged.FONR_1.hlfhrly); head(merged.FONR_1.hlfhrly)
+#Replace NA's in millimeters with 0 values to represent no events recorded that hour.  
+merged.FONRmet.hlfhrly$millimeters[is.na(merged.FONRmet.hlfhrly$millimeters)] <- 0; str(merged.FONRmet.hlfhrly); head(merged.FONRmet.hlfhrly)
 
+
+
+#### Alternative Aggregation ####
+FONRmet <- read.csv("/Users/conorrickard/Documents/R_prog_files/_Git_Projects/ForLoop_Aggregate_MonthlyTotalsFONR/IMPORT/FONR_Weather_07182019_06192020.csv")
+names(FONRmet)[1:2] <- c("DateTime", "millimeters")
+FONRmet$DateTime = strptime(FONRmet$DateTime, format = "%m/%d/%y %H:%M:%S") ; str(FONRmet$DateTime)
+# FONRmet$DateTime  <- as.POSIXct(FONRmet$DateTime, format = "%m/%d/%y %H:%M:%S") ; str(FONRmet$DateTime)
+# FONRmet$DateTime <- as.Date(FONRmet$DateTime)
+FONRmet$Month <- month(as.POSIXct(FONRmet$DateTime), label = TRUE)
+FONRmet$Year <- format(FONRmet$DateTime,format="%Y")
+FONRmet.monthly <- aggregate( millimeters ~ Year + Month , FONRmet , sum )
+FONRmet.monthly <- data.frame(FONRmet.monthly)
+write.csv(FONRmet.monthly, file= "/Users/conorrickard/Documents/R_prog_files/_Git_Projects/ForLoop_Aggregate_MonthlyTotalsFONR/FONRmetExport/FONRmet.monthly.csv",row.names = FALSE)
+
+
+### Scratch
+# Note that strptime converts to POSIXlt format and requires a step to convert from local time (lt) to calendar time (ct)
