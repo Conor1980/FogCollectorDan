@@ -21,23 +21,22 @@ R <- R.Version(); R$version.string; R$platform; S <- sessionInfo(); S$running
 # Put the files 
 
 #### Read in your files #Set some stuff up ####
-# Get a Madgetech excel file; clear the logger headers and an extra column; make sure the excel is a dataframe
+# Get a Madgetech excel file; clear the logger headers; make sure the excel is a dataframe
 file<- read_excel("/Users/conorrickard/Documents/R_prog_files/_Git_Projects/MyFirstScriptsFONR/Import/FONR_STA_1_NN_20190710_20190914.xlsx",skip=6)
-# Read in your calibration table
+# Read in your calibration table too
 cal.table <-as.data.frame(read_excel("/Users/conorrickard/Documents/R_prog_files/_Git_Projects/MyFirstScriptsFONR/Import/CalibrationTable.xlsx"))
-# Designate the pattern of your station file name 
+# Designate the pattern of your station file name here in quotes: 
 pattern = "FONR_STA_1"
-# This is the beginning date of your file name
 
 
-# Make sure your excel file is a dataframe
+# Make sure your excel file is a dataframe and get rid of an extra column 
 file<- as.data.frame(file[,-2]); head(file)
 # Rename the headers to our Lab standard (also easier to write within code)
 names(file)[1:2]<- c("DateTime", "Liters"); head(file)
 
 
-## > cal.table <-as.data.frame(read_excel(
-#### Set up your calibration table ####
+## Remember this? > cal.table <-as.data.frame(read_excel(
+#### Set up the calibration table you read in ####
 head(cal.table)
 names(cal.table)[1] <- "CalDate"; head(cal.table)
 Tcal.table<- setNames(data.frame(t(cal.table[,-1])), cal.table[,1]); head(Tcal.table) 
@@ -46,11 +45,7 @@ row.names(Tcal.table)<- NULL; head(Tcal.table); class(Tcal.table$CalDate)
 Tcal.table$CalDate<- as.POSIXct(as.Date(as.numeric(Tcal.table$CalDate), origin = "1899-12-30")); Tcal.table$CalDate; class(Tcal.table$CalDate)
 
 
-# Tcal.table[2,paste0(unlist(strsplit(noext, "_"))[c(1)],"_",unlist(strsplit(noext, "_"))[c(3)])]
 
-
-
-# rownames(Tcal.table)<- colnames(cal.table)
 
 
 
@@ -61,11 +56,14 @@ Tcal.table$CalDate<- as.POSIXct(as.Date(as.numeric(Tcal.table$CalDate), origin =
 (R_startdate<- unlist(strsplit(noext, "_"))[c(5)])
 (R_enddate<- unlist(strsplit(noext, "_"))[c(6)])
 (Calibration<- Tcal.table[])
+
+## Still working on referencing the calibration table 
 Tcal.table$CalDate
 Calibration<- Tcal.table[Tcal.table %>% filter(Tcal.table$CalDate > as.POSIXct(as.Date(R_startdate, "%Y%m%d"), tz="UTC")),R_name]
 (test<- as.Date(R_startdate, "%Y%m%d"))
 
 
+# Still setting up
 Astdrdhead<- rbind("R.name",
                   "R.startdate",
                   "R.enddate",
@@ -82,6 +80,10 @@ Bstdrdhead<- rbind(paste0(unlist(strsplit(noext, "_"))[c(1)],"_",unlist(strsplit
                    unlist(strsplit(noext, "_"))[c(5)],
                    unlist(strsplit(noext, "_"))[c(6)],
                    4,5,6,7,8,9,10,11,12)
+
+
+### Scratch
+
 Bstdrdhead
 
 
@@ -130,6 +132,9 @@ View(file)
 
 
 ### Scratch
+
+?strptime
+
 
 convertToDateTime(file$Time, origin = "1900-01-01")
 strsplit(list.files(pattern=pattern), "\\.")[[1]]
@@ -210,4 +215,10 @@ as.POSIXlt(Sys.time(), "Australia/Darwin")
 
 
 
-?strptime
+
+
+# Tcal.table[2,paste0(unlist(strsplit(noext, "_"))[c(1)],"_",unlist(strsplit(noext, "_"))[c(3)])]
+
+
+
+# rownames(Tcal.table)<- colnames(cal.table)
